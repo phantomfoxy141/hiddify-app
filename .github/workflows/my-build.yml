@@ -1,0 +1,12 @@
+name: My Android Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  android:
+    uses: ./.github/workflows/build-android.yml
+    with:
+      release: false
+      channel: dev
+    secrets: inherit
