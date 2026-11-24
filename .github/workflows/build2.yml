@@ -1,0 +1,45 @@
+name: My Android Build 2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  codegen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/setup-flutter
+        with:
+          platform: common
+          install-deps: false
+
+      - name: Pack the generated code
+        run: |
+          set -euo pipefail
+          git ls-files --others -- lib test > "$RUNNER_TEMP/generated-files.txt"
+          echo "$(wc -l < "$RUNNER_TEMP/generated-files.txt") generated files"
+          test -s "$RUNNER_TEMP/generated-files.txt"
+          tar -czf generated-code.tar.gz -T "$RUNNER_TEMP/generated-files.txt"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: generated-code
+          path: generated-code.tar.gz
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+
+  android:
+    needs: codegen
+    uses: ./.github/workflows/build-android.yml
+    secrets: inherit
+    permissions:
+      contents: read
+    with:
+      release: false
+      channel: dev
+      upload-symbols: false
