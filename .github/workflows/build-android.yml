@@ -93,7 +93,16 @@ jobs:
             storePassword "$STORE_PASSWORD" \
             keyPassword "$KEY_PASSWORD" \
             keyAlias "$KEY_ALIAS" > android/key.properties
-
+      - name: Make a debug signing key
+        if: inputs.release
+        env:
+          SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then
+            rm -f android/key.jks
+            keytool -genkeypair -keystore android/key.jks -storepass android123 -keypass android123 -alias mykey -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=My VPN"
+            printf '%s=%s\n' storeFile "$PWD/android/key.jks" storePassword android123 keyPassword android123 keyAlias mykey > android/key.properties
+          fi
       # Google Play takes each version code once, and every build of a version (each draft, the .dev
       # tag, the release) has pubspec's. The APKs and the bundle get the run's store build number
       # (next-build-number: one more than the highest any store took), the one the IPA and the Mac
