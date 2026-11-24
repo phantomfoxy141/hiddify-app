@@ -40,6 +40,6 @@ jobs:
     permissions:
       contents: read
     with:
-      release: false
+      release: true
       channel: dev
       upload-symbols: false
