@@ -6,7 +6,23 @@ import 'package:dio/io.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 
 import 'package:hiddify/utils/custom_loggers.dart';
+final String _hwid = _deviceId();
 
+String _deviceId() {
+  try {
+    final file = File('${Directory.systemTemp.path}/hwid.txt');
+    if (file.existsSync()) {
+      final saved = file.readAsStringSync().trim();
+      if (saved.isNotEmpty) return saved;
+    }
+    final id =
+        '${DateTime.now().microsecondsSinceEpoch.toRadixString(16)}${identityHashCode(Object()).toRadixString(16)}';
+    file.writeAsStringSync(id);
+    return id;
+  } catch (_) {
+    return 'unknown-device';
+  }
+}
 class DioHttpClient with InfraLogger {
   final Map<String, Dio> _dio = {};
   DioHttpClient({required Duration timeout, required this.userAgent, required bool debug}) {
@@ -181,6 +197,8 @@ class DioHttpClient with InfraLogger {
       responseType: responseType,
       headers: {
         "User-Agent": userAgent ?? this.userAgent,
+              "x-hwid": _hwid,
+      "x-device-os": Platform.operatingSystem,
         if (basicAuth != null) "authorization": basicAuth,
         // "Accept": "application/json",
         // "Content-Type": "application/json",
